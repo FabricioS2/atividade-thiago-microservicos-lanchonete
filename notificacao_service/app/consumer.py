@@ -1,37 +1,3 @@
-# import os
-# import json
-# import asyncio
-# import aio_pika
-# from sqlalchemy.orm import Session
-# from .database import SessionLocal
-# from .models import NotificacaoCozinha
-
-# RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq/")
-
-# async def consume():
-#     connection = await aio_pika.connect_robust(RABBITMQ_URL)
-#     async with connection:
-#         channel = await connection.channel()
-#         exchange = await channel.declare_exchange("pedidos", aio_pika.ExchangeType.TOPIC, durable=True)
-#         queue = await channel.declare_queue("cozinha_notificacao", durable=True)
-#         await queue.bind(exchange, routing_key="cozinha.notificar")
-        
-#         async with queue.iterator() as queue_iter:
-#             async for message in queue_iter:
-#                 async with message.process():
-#                     body = json.loads(message.body.decode())
-#                     pedido_id = body["pedido_id"]
-#                     db = SessionLocal()
-#                     try:
-#                         nova = NotificacaoCozinha(pedido_id=pedido_id, lida=False)
-#                         db.add(nova)
-#                         db.commit()
-#                     except Exception as e:
-#                         print(f"Erro ao salvar notificação: {e}")
-#                     finally:
-#                         db.close()
-
-
 import os
 import json
 import asyncio
