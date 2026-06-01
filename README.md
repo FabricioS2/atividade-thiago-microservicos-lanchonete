@@ -1,9 +1,5 @@
 # atividade-thiago-microservicos-lanchonete
 
-Segue uma versão consolidada, removendo sobreposições e organizando todo o conteúdo em uma única resposta coesa.
-
----
-
 ## 1. Visão geral do projeto
 
 O sistema implementa uma arquitetura de **microserviços** para uma lanchonete, utilizando **FastAPI**, **SQLite** isolado por serviço, **RabbitMQ** para mensageria e **Docker Compose** com health checks independentes. Cada serviço é responsável por um domínio específico: cardápio, pedidos, pagamento e notificação de cozinha.
@@ -12,8 +8,8 @@ O sistema implementa uma arquitetura de **microserviços** para uma lanchonete, 
 
 ## 2. Tecnologias utilizadas
 
-**Base comum a todos os serviços**
-- Python 3.12, FastAPI, Uvicorn, SQLAlchemy (ORM), Pydantic (validação), SQLite (banco de dados local)
+**Base comum a todos os serviços**  
+Python 3.12, FastAPI, Uvicorn, SQLAlchemy (ORM), Pydantic (validação), SQLite (banco de dados local)
 
 **Especificidades por serviço**
 
@@ -24,9 +20,8 @@ O sistema implementa uma arquitetura de **microserviços** para uma lanchonete, 
 | **pagamento_service** | — | Processamento simulado de pagamento (mock com 80% de aprovação) e consulta de status |
 | **notificacao_service** | `aio-pika` (consumidor RabbitMQ) | Consome a fila de notificações da cozinha, persiste e expõe API de consulta |
 
-**Infraestrutura**
-- Docker e Docker Compose (cada serviço em um container)
-- RabbitMQ 3-management como message broker
+**Infraestrutura**  
+Docker, Docker Compose (cada serviço em um container) e RabbitMQ 3-management como message broker.
 
 ---
 
@@ -73,7 +68,7 @@ atividade-thiago-microservicos-lanchonete/
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── docker-compose.yml        # Orquestração dos containers, volumes, redes, healthchecks
-├── teste_lanchonete.py        # Script de testes integrados de ponta a ponta
+├── teste_lanchonete.py       # Script de testes integrados de ponta a ponta
 └── README.md
 ```
 
@@ -168,130 +163,33 @@ A comunicação pedidos → pagamento é síncrona; a notificação à cozinha �
 
 - **Isolamento de responsabilidades** – cada serviço cuida do seu domínio, facilitando evolução independente.
 - **Comunicação assíncrona** – a cozinha é notificada via fila, desacoplando o fluxo do pedido e aumentando a tolerância a falhas.
-- **Tecnolog- **Tecnologias modernas** – Fastias modernas** – FastAPI ofereAPI oferece altoce alto desempenho, desempenho, documentação automática (OpenAPI), documentação automática (OpenAPI), suporte ass suporte assíncrono nativo.íncrono nativo. Pydantic e SQL Pydantic e SQLAlchemy garantem tipagem segura.
-Alchemy garantem tipagem segura.
-- **Container- **Containerização** – Dockerização** – Docker Compose permite Compose permite subir toda subir toda a stack com um único com a stack com um único comando, comando, com amb ambientes reproientes reprodutíveisdutíveis.
-- **Resili.
-- **Resiliência na comunicação sência na comunicação síncíncrona** – retrona** – retry nasry nas chamadas a chamadas a cardápio cardápio e pagamento mit e pagamento mitiga falhas temporiga falhas temporárias.
-- **Flexárias.
-- **Flexibilidade de banibilidade de banco** – varico** – variável `DATABASE_URL`ável `DATABASE_URL` permite trocar SQL permite trocar SQLite por PostgreSQL semite por PostgreSQL sem alterar alterar código.
-- ** código.
-- **Health checksHealth checks**** integ integrados –rados – pr prontos para orontos para orquestradquestradores eores e monitoramento.
+- **Tecnologias modernas** – FastAPI oferece alto desempenho, documentação automática (OpenAPI), suporte assíncrono nativo. Pydantic e SQLAlchemy garantem tipagem segura.
+- **Containerização** – Docker Compose permite subir toda a stack com um único comando, com ambientes reprodutíveis.
 
 ---
 
-##  monitoramento.
+## 8. Desvantagens e maneiras de contornar
 
----
+1. **Ausência de API Gateway / Service Discovery**  
+   *Problema*: URLs fixas internas, exposição direta de portas.  
+   *Solução*: Adicionar um proxy reverso (Traefik, NGINX) ou API Gateway, e service discovery (Kubernetes Services/Consul).
 
-## 8. Desvantagens8. Desvantagens e maneiras de cont e maneiras de contornar
+2. **SQLite em produção**  
+   *Problema*: Baixa concorrência, sem replicação.  
+   *Solução*: Migrar para PostgreSQL/MySQL, já configurável via `DATABASE_URL`.
 
-1. **ornar
+3. **Consistência em transações distribuídas**  
+   *Problema*: Se RabbitMQ falhar após pagamento aprovado, a notificação não é criada.  
+   *Solução*: Padrão **Saga** ou **Outbox** (salvar evento no banco do pedido e publicar em background).
 
-1. **Ausência de APIAusência de API Gateway / Gateway / Service Discovery**  
-   * Service Discovery**  
-   *Problema*Problema*: URLs fixas: URLs fixas internas internas, exp, exposição direosição direta de portas.  
-ta de portas.  
-   *S   *Solução*: Adicionarolução*: Adicionar um proxy reverso (Tra um proxy reverso (Traefik, NGINXefik, NGINX) ou API) ou API Gateway, e Gateway, e service discovery ( service discovery (Kubernetes ServicesKubernetes Services/Consul).
+4. **Dependência de inicialização no Compose**  
+   *Problema*: `depends_on` não garante que o serviço esteja pronto.  
+   *Solução*: Usar `wait-for-it` nos entrypoints, ou lógica de retry já existente.
 
-2. **/Consul).
+5. **Escalabilidade vertical limitada**  
+   *Problema*: SQLite não escala horizontalmente.  
+   *Solução*: Migrar para banco clusterizado e adicionar cache (Redis) para dados de cardápio.
 
-2. **SQLite em produção**SQLite em produção**  
-   *Problema  
-   *Problema*: Baixa conc*: Baixa concorrência,orrência, sem replic sem replicação.  
-   *ação.  
-   *Solução*: MigSolução*: Migrar para PostgreSQL/rar para PostgreSQL/MySQL, jáMySQL, já configur configurável via `DATABASE_URLável via `DATABASE_URL`.
-
-3. **Simulação`.
-
-3. **Simulação de de pagamento aleat pagamento aleatória**  
-   *Proória**  
-   *Problema*: Nãoblema*: Não real realista, falista, falhas interhas intermitentes emmitentes em testes.  
-   *S testes.  
-   *Solução*: Integrar comolução*: Integrar com gateway de pagamento real ou gateway de pagamento real ou mock mock determin determinístico (ex.:ístico (ex.: baseado no baseado no ID ID da forma de pagamento da forma de pagamento).
-
-4. **Ident).
-
-4. **Identificação frágil (`X-User-Idificação frágil (`X-User-Id`)**  
-   *Pro`)**  
-   *Problema*blema*: Sem aut: Sem autenticação, vulnerenticação, vulnerável a spoofing.ável a spoofing.  
-   *Solução*  
-   *Solução*: Implementar aut: Implementar autenticação Jenticação JWT/OWT/OAuth,Auth, valid validar tokensar tokens em um em um middleware.
-
- middleware.
-
-5. **5. **Observabilidade insObservabilidade insuficiente**  
-  uficiente**  
-   *Problema*: *Problema*: Logs com Logs com `print`, sem `print`, sem tracing tracing ou métricas.  
-   ou métricas.  
-   *Solução*: Us *Solução*: Usar logging estruturado,ar logging estruturado, OpenTelemetry + Ja OpenTelemetry + Jaeger, Prometheus +eger, Prometheus + Grafana.
-
-6. ** Grafana.
-
-6. **ConsConsistência emistência em trans transações distribuídas**  
-ações distribuídas**  
-   *   *Problema*Problema*: Se RabbitMQ fal: Se RabbitMQ falhar após paghar após pagamento aprovado, a notificação não é criamento aprovado, a notificação não é criada.  
-   *Sada.  
-   *Solução*: Padolução*: Padrão **Srão **Saga** ouaga** ou **Outbox** (sal **Outbox** (salvar evento no banvar evento no banco do pedido eco do pedido e publicar em publicar em background).
-
-7. background).
-
-7. **Dependência de inicial **Dependência de inicialização no Compização no Compose**  
-   *Proose**  
-   *Problema*: `depends_on` não garblema*: `depends_on` não garante que serviante que serviço esteja pronto.  
-ço esteja pronto.  
-   *Solução*:   *Solução*: Usar `wait-for-it Usar `wait-for-it` nos entrypoints, ou` nos entrypoints, ou lógica lógica de retry já exist de retry já existente.
-
-8.ente.
-
-8. **Escalabilidade **Escalabilidade vertical limitada**  
-   vertical limitada**  
-   *Problema *Problema*: SQLite não*: SQLite não escala escala horizontal horizontalmente.  
-   *Smente.  
-   *Solução*: Migrar paraolução*: Migrar para banco cluster banco clusterizado e adizado e adicionar cache (icionar cache (Redis) para dados deRedis) para dados de cardápio.
-
- cardápio.
-
-9. **Version9. **Versionamento deamento de API ausente**  
-   API ausente**  
-   *Proble *Problema*:ma*: Alter Alterações podemações podem quebrar client quebrar clientes.  
-   *Ses.  
-   *Solução*: Prefixolução*: Prefixar endpointsar endpoints com `/v1/` ou usar headers com `/v1/` ou usar headers de versionamento de versionamento.
-
-10. **Testes.
-
-10. **Testes man manuais e fruais e frágeis**  
-   ágeis**  
-    *Problema*: *Problema*: Script monolítico Script monolítico,, sem integ sem integração contração contínua.  
-    *ínua.  
-    *Solução*: AdSolução*: Adotar `pytest`otar `pytest` com `testcontain com `testcontainers`, testesers`, testes de contrato ( de contrato (Pact) e pipelinesPact) e pipelines CI/CD.
-
----
-
-##  CI/CD.
-
----
-
-## 9. Rollback do servi9. Rollback do serviço de pagamento semço de pagamento sem impacto impacto nos dem nos demais
-
-Como cadaais
-
-Como cada mic microsserviço érosserviço é independent independente e ae e a comunicação é feita via comunicação é feita via HTTP HTTP, o roll, o rollback éback é seguro:
-
-1 seguro:
-
-1.. Pare Pare apenas o apenas o container de container de pagamento:  
- pagamento:  
-   `   `docker-compose stop pagdocker-compose stop pagamento`
-2. Substamento`
-2. Substitua a imagem pelaitua a imagem pela versão anterior (reb versão anterior (rebuild ou `uild ou `docker tag`).
-3.docker tag`).
-3. Se o esqu Se o esquema doema do banco SQL banco SQLite foiite foi alter alterado, restaure o arquado, restaure o arquivo de backupivo de backup do volume do volume `pagamento_data `pagamento_data`.
-4. Inicie`.
-4. Inicie novamente:  
-   ` novamente:  
-   `docker-compose up -ddocker-compose up -d --no-deps --no-deps pagamento`
-
-O ` pagamento`
-
-O `pedidos_service` continuarápedidos_service` continuará chamando os chamando os mesmos endpoints REST mesmos endpoints REST; se h; se houver erro temporouver erro temporário, o retário, o retry comry com `tenacity` absor `tenacity` absorveve a falha até a falha até o serviço volt o serviço voltar.ar. N Nenhenhum outro serviço é reiniciado, garantumindo **de outro serviço é reiniciado, garantindo **deploy independentploy independente** e **e** e **zerozero downtime downtime** nos** nos demais.
+6. **Versionamento de API ausente**  
+   *Problema*: Alterações podem quebrar clientes.  
+   *Solução*: Prefixar endpoints com `/v1/` ou usar headers de versionamento.
